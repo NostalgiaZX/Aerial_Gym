@@ -35,7 +35,7 @@ class QuadFlightDynamicEnvCfg:
         include_asset_type = {
             "panels": False,
             "thin": False,
-            "trees": True,
+            "trees": False,
             "objects": False,
             "left_wall": False,
             "right_wall": False,

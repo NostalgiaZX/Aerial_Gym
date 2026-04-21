@@ -538,8 +538,8 @@ class back_wall(asset_state_params):
     per_link_semantic = False
     semantic_id = BACK_WALL_SEMANTIC_ID
     color = [100, 200, 210]
-class dynamic_uav_asset_params:
-    num_assets = 1
+class dynamic_uav_asset_params(asset_state_params):
+    num_assets = 10
 
     asset_folder = f"{AERIAL_GYM_DIRECTORY}/resources/robots/quad"
     file = "quad.urdf"
