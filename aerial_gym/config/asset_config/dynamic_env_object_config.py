@@ -538,3 +538,46 @@ class back_wall(asset_state_params):
     per_link_semantic = False
     semantic_id = BACK_WALL_SEMANTIC_ID
     color = [100, 200, 210]
+class dynamic_uav_asset_params:
+    num_assets = 1
+
+    asset_folder = f"{AERIAL_GYM_DIRECTORY}/resources/robots/quad"
+    file = "quad.urdf"
+
+    collision_mask = 1  # objects with the same collision mask will not collide
+
+    min_state_ratio = [
+        0.30,
+        0.05,
+        0.05,
+        -np.pi,
+        -np.pi,
+        -np.pi,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+    ]
+    max_state_ratio = [
+        0.85,
+        0.9,
+        0.9,
+        np.pi,
+        np.pi,
+        np.pi,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+    ]
+
+    keep_in_env = False
+    per_link_semantic = False
+    semantic_id = -1
+    color = [100, 200, 210]
