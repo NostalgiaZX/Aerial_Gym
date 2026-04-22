@@ -19,7 +19,10 @@ if __name__ == "__main__":
         headless=args.headless,
         use_warp=args.use_warp,
     )
-    actions = torch.zeros((env_manager.num_envs, 4)).to("cuda:0")
+    num_assets_in_env = (
+            env_manager.IGE_env.num_assets_per_env - 1
+    )
+    actions = torch.zeros((env_manager.num_envs,num_assets_in_env, 6)).to("cuda:0")
     env_manager.reset()
     asset_twist=torch.zeros((env_manager.num_envs,env_manager.asset_manager. 4)).to("cuda:0")
     for i in range(10000):
