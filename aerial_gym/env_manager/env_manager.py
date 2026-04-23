@@ -421,3 +421,9 @@ class EnvManager(BaseManager):
     def get_obs(self):
         # Just return the dict of all tensors. Whatever the task needs can be used to compute the rewards.
         return self.global_tensor_dict
+    def get_assets_index(self,assetname):
+        index=[]
+        for i in range(len(self.global_asset_dicts[0])):
+            if self.global_asset_dicts[0][i]["asset_type"]==assetname:
+                index.append(i)
+        return index

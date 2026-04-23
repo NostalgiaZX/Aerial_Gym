@@ -22,9 +22,10 @@ if __name__ == "__main__":
     num_assets_in_env = (
             env_manager.IGE_env.num_assets_per_env - 1
     )
-    actions = torch.zeros((env_manager.num_envs,num_assets_in_env, 6)).to("cuda:0")
     env_manager.reset()
-    asset_twist=torch.zeros((env_manager.num_envs,env_manager.asset_manager. 4)).to("cuda:0")
+    asset_twist = torch.zeros((env_manager.num_envs,num_assets_in_env, 6)).to("cuda:0")
+    actions =torch.zeros((env_manager.num_envs, 4)).to("cuda:0")
+    uav_index=env_manager.get_assets_index("dynamic_uav")
     for i in range(10000):
         if i % 500 == 0:
             logger.info(f"Step {i}, changing target setpoint.")

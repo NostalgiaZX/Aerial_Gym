@@ -577,7 +577,7 @@ class dynamic_uav_asset_params(asset_state_params):
         0.0,
     ]
 
-    keep_in_env = False
+    keep_in_env = True
     per_link_semantic = False
     semantic_id = -1
     color = [100, 200, 210]
