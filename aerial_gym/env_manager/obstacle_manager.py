@@ -50,11 +50,11 @@ class ObstacleManager(BaseManager):
     def step(self):
         pass
 
-    # def update_states(self):
-    #     self.obstacle_euler_angles[:] = ssa(get_euler_xyz_tensor(self.obstacle_orientation))
-    #     self.obstacle_vehicle_orientation[:] = vehicle_frame_quat_from_quat(self.obstacle_orientation)
-    #     self.obstacle_vehicle_linvel[:] = quat_rotate_inverse(
-    #         self.obstacle_vehicle_orientation, self.obstacle_linvel
-    #     )
-    #     self.obstacle_body_linvel[:] = quat_rotate_inverse(self.obstacle_orientation, self.obstacle_linvel)
-    #     self.obstacle_body_angvel[:] = quat_rotate_inverse(self.obstacle_orientation, self.obstacle_angvel)
+     def update_states(self):
+         self.obstacle_euler_angles[:] = ssa(get_euler_xyz_tensor(self.obstacle_orientation))
+         self.obstacle_vehicle_orientation[:] = vehicle_frame_quat_from_quat(self.obstacle_orientation)
+         self.obstacle_vehicle_linvel[:] = quat_rotate_inverse(
+             self.obstacle_vehicle_orientation, self.obstacle_linvel
+         )
+         self.obstacle_body_linvel[:] = quat_rotate_inverse(self.obstacle_orientation, self.obstacle_linvel)
+         self.obstacle_body_angvel[:] = quat_rotate_inverse(self.obstacle_orientation, self.obstacle_angvel)

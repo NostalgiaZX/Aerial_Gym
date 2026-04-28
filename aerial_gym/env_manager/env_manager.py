@@ -427,3 +427,14 @@ class EnvManager(BaseManager):
             if self.global_asset_dicts[0][i]["asset_type"]==assetname:
                 index.append(i)
         return index
+    def get_obs_position(self):
+        return self.obstacle_manager.obstacle_position
+
+    def get_obs_linvel(self):
+        return self.obstacle_manager.obstacle_linvel
+
+    def get_obs_orientation(self):
+        return self.obstacle_manager.obstacle_orientation
+
+    def get_obs_angvel(self):
+        return self.obstacle_manager.obstacle_angvel
