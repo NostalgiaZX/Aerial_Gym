@@ -20,19 +20,22 @@ if __name__ == "__main__":
         use_warp=args.use_warp,
     )
     num_assets_in_env = (
-            env_manager.IGE_env.num_assets_per_env - 1
+            env_manager.IGE_env.num_assets_per_env -1
     )
     env_manager.reset()
     asset_twist = torch.zeros((env_manager.num_envs,num_assets_in_env, 6)).to("cuda:0")
     actions =torch.zeros((env_manager.num_envs, 4)).to("cuda:0")
     uav_index=env_manager.get_assets_index("dynamic_uav")
     for i in range(10000):
-        if i % 500 == 0:
+        if i % 50 == 0:
             logger.info(f"Step {i}, changing target setpoint.")
-            # actions[:, 0:3] = 2.0 * (torch.rand_like(actions[:, 0:3]) * 2 - 1)
-            # actions[:, 3] = torch.pi * (torch.rand_like(actions[:, 3]) * 2 - 1)
-            env_manager.reset()
-        asset_twist[:, :, 0] = torch.sin(0.2 * i * torch.ones_like(asset_twist[:, :, 0]))
-        asset_twist[:, :, 1] = torch.cos(0.2 * i * torch.ones_like(asset_twist[:, :, 1]))
-        asset_twist[:, :, 2] = 0.0
-        env_manager.step(actions=actions)
+            #actions[:, 0:3] = 2.0 * (torch.rand_like(actions[:, 0:3]) * 2 - 1)
+            #actions[:, 3] = torch.pi * (torch.rand_like(actions[:, 3]) * 2 - 1)
+            #actions[:,0]=(actions[:,0]+1)%3
+            #actions[:,3]=(actions[:,0]+torch.pi/2)%torch.pi
+            #env_manager.reset()
+        for index in uav_index:
+            asset_twist[:, index, 0] = torch.sin(0.2 * i * torch.ones_like(asset_twist[:, index, 0]))
+            asset_twist[:, index, 1] = torch.cos(0.2 * i * torch.ones_like(asset_twist[:, index, 1]))
+            asset_twist[:, index, 2] = 0.0
+        env_manager.step(actions=actions,env_actions=asset_twist)

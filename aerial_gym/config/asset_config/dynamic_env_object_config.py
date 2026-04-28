@@ -165,7 +165,7 @@ class thin_asset_params(asset_state_params):
 
 
 class tree_asset_params(asset_state_params):
-    num_assets = 6
+    num_assets = 1
 
     asset_folder = f"{AERIAL_GYM_DIRECTORY}/resources/models/environment_assets/trees"
 
@@ -539,7 +539,7 @@ class back_wall(asset_state_params):
     semantic_id = BACK_WALL_SEMANTIC_ID
     color = [100, 200, 210]
 class dynamic_uav_asset_params(asset_state_params):
-    num_assets = 10
+    num_assets = 1
 
     asset_folder = f"{AERIAL_GYM_DIRECTORY}/resources/robots/quad"
     file = "quad.urdf"
