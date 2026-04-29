@@ -34,8 +34,12 @@ if __name__ == "__main__":
             #actions[:,0]=(actions[:,0]+1)%3
             #actions[:,3]=(actions[:,0]+torch.pi/2)%torch.pi
             #env_manager.reset()
+        euler_angles = env_manager.get_obs_euler()
+        position = env_manager.get_obs_position()
         for index in uav_index:
             asset_twist[:, index, 0] = torch.sin(0.2 * i * torch.ones_like(asset_twist[:, index, 0]))
             asset_twist[:, index, 1] = torch.cos(0.2 * i * torch.ones_like(asset_twist[:, index, 1]))
             asset_twist[:, index, 2] = 0.0
+        actions[:, 0:3] = position[:, uav_index[0], 0:3]
+        actions[:, 3] = euler_angles[:, uav_index[0], 2]
         env_manager.step(actions=actions,env_actions=asset_twist)

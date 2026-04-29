@@ -399,6 +399,12 @@ class IsaacGymEnv(BaseManager):
             self.global_tensor_dict["obstacle_euler_angles"] = torch.zeros_like(
                 self.global_tensor_dict["env_asset_state_tensor"][:, :, 7:10]
             )
+            self.global_tensor_dict["obstacle_vehicle_orientation"] = torch.zeros_like(
+                self.global_tensor_dict["env_asset_state_tensor"][:, :, 3:7]
+            )
+            self.global_tensor_dict["obstacle_vehicle_linvel"] = torch.zeros_like(
+                self.global_tensor_dict["env_asset_state_tensor"][:, :, 7:10]
+            )
 
             # assume that each obstacle is collapsed to a single base link
             self.global_tensor_dict["obstacle_force_tensor"] = self.global_tensor_dict[

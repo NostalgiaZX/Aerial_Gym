@@ -25,6 +25,11 @@ class ObstacleManager(BaseManager):
         self.obstacle_orientation = global_tensor_dict["obstacle_orientation"]
         self.obstacle_linvel = global_tensor_dict["obstacle_linvel"]
         self.obstacle_angvel = global_tensor_dict["obstacle_angvel"]
+        self.obstacle_euler_angles = global_tensor_dict["obstacle_euler_angles"]
+        self.obstacle_vehicle_orientation = global_tensor_dict["obstacle_vehicle_orientation"]
+        self.obstacle_vehicle_linvel = global_tensor_dict["obstacle_vehicle_linvel"]
+        self.obstacle_body_linvel = global_tensor_dict["obstacle_body_linvel"]
+        self.obstacle_body_angvel = global_tensor_dict["obstacle_body_angvel"]
 
         # self.obstacle_force_tensors = global_tensor_dict["obstacle_force_tensor"]
         # self.obstacle_torque_tensors = global_tensor_dict["obstacle_torque_tensor"]

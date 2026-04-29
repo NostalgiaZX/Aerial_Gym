@@ -341,6 +341,7 @@ class EnvManager(BaseManager):
         if self.use_warp:
             self.warp_env.post_physics_step()
         self.asset_manager.post_physics_step()
+        self.obstacle_manager.update_states()
 
     def compute_observations(self):
         self.collision_tensor[:] += (
@@ -438,3 +439,6 @@ class EnvManager(BaseManager):
 
     def get_obs_angvel(self):
         return self.obstacle_manager.obstacle_angvel
+
+    def get_obs_euler(self):
+        return self.obstacle_manager.obstacle_euler_angles
