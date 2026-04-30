@@ -20,7 +20,16 @@ class WarpAsset(BaseAsset):
         self.file = asset_file
         # get trimesh collision and visual meshes
         self.urdf_asset = URDF.load(asset_file)
-        self.visual_mesh_items = self.urdf_asset.visual_trimesh_fk().items()
+        try:
+            self.visual_mesh_items = self.urdf_asset.visual_trimesh_fk().items()
+        except TypeError:
+            # urdfpy bug: primitive geometries (sphere/cylinder/box) leave _meshes=None
+            # fall back to building trimesh primitives manually
+            logger.warning(
+                f"Asset {asset_file} uses primitive visual geometry. "
+                "Falling back to manually generated trimesh primitives for Warp."
+            )
+            self.visual_mesh_items = self._build_primitive_visual_mesh_items()
         self.urdf_named_links = [key.name for key in self.urdf_asset.link_fk().keys()]
 
         self.asset_meshes = []
@@ -112,6 +121,13 @@ class WarpAsset(BaseAsset):
             )
             mesh_index += 1
 
+        if len(self.asset_meshes) == 0:
+            logger.warning(f"Asset {asset_file} produced no meshes. Using placeholder.")
+            placeholder = tm.creation.icosphere(subdivisions=1, radius=0.1)
+            self.asset_meshes.append(placeholder)
+            self.asset_vertex_segmentation_value = [self.segmentation_id] * len(placeholder.vertices)
+            self.variable_segmentation_mask = [0] * len(placeholder.vertices)
+
         self.asset_unified_mesh = tm.util.concatenate(self.asset_meshes)
         self.asset_vertex_segmentation_value = np.array(self.asset_vertex_segmentation_value)
         logger.debug(
@@ -134,3 +150,27 @@ class WarpAsset(BaseAsset):
         assert len(self.variable_segmentation_mask) == len(
             self.asset_vertex_segmentation_value
         ), f"len(self.variable_segmentation_mask) = {len(self.variable_segmentation_mask)}, len(self.asset_vertex_segmentation_value) = {len(self.asset_vertex_segmentation_value)}"
+
+    def _build_primitive_visual_mesh_items(self):
+        """Convert URDF primitive visual geometries (sphere/cylinder/box) to trimesh objects.
+        Workaround for urdfpy bug where _meshes is None for primitive geometries."""
+        from urdfpy import Box, Cylinder, Sphere
+        import trimesh.creation as creation
+
+        items = []
+        link_fk = self.urdf_asset.link_fk()
+        for link, tf in link_fk.items():
+            for visual in link.visuals:
+                geom = visual.geometry
+                origin = visual.origin if visual.origin is not None else np.eye(4)
+                world_tf = tf @ origin
+                if isinstance(geom, Box):
+                    mesh = creation.box(extents=geom.size)
+                elif isinstance(geom, Sphere):
+                    mesh = creation.icosphere(subdivisions=2, radius=geom.radius)
+                elif isinstance(geom, Cylinder):
+                    mesh = creation.cylinder(radius=geom.radius, height=geom.length)
+                else:
+                    continue
+                items.append((mesh, world_tf))
+        return items
