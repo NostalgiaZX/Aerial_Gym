@@ -40,7 +40,7 @@ class BattleUavTask(BaseTask):
             self.task_config.reward_parameters[key] = torch.tensor(
                 self.task_config.reward_parameters[key], device=self.device
             )
-        logger.info("Building environment for position setpoint task.")
+        logger.info("Building environment for battle uav task.")
         logger.info(
             "\nSim Name: {},\nEnv Name: {},\nRobot Name: {}, \nController Name: {}".format(
                 self.task_config.sim_name,
@@ -76,11 +76,13 @@ class BattleUavTask(BaseTask):
         )
         self.prev_actions = torch.zeros_like(self.actions)
         self.counter = 0
-
+        self.uav_index = self.sim_env.get_assets_index("dynamic_uav")
         self.target_position = torch.zeros(
             (self.sim_env.num_envs, 3), device=self.device, requires_grad=False
         )
-
+        self.target_velocity = torch.zeros(
+            (self.sim_env.num_envs, 3), device=self.device, requires_grad=False
+        )
         # Get the dictionary once from the environment and use it to get the observations later.
         # This is to avoid constant retuning of data back anf forth across functions as the tensors update and can be read in-place.
         self.obs_dict = self.sim_env.get_obs()
@@ -90,7 +92,7 @@ class BattleUavTask(BaseTask):
         self.rewards = torch.zeros(self.truncations.shape[0], device=self.device)
 
         self.observation_space = Dict(
-            {"observations": Box(low=-1.0, high=1.0, shape=(13,), dtype=np.float32)}
+            {"observations": Box(low=-1.0, high=1.0, shape=(self.task_config.observation_space_dim,), dtype=np.float32)}
         )
         self.action_space = Box(
             low=-1.0,
@@ -101,8 +103,6 @@ class BattleUavTask(BaseTask):
         # self.action_transformation_function = self.sim_env.robot_manager.robot.action_transformation_function
 
         self.num_envs = self.sim_env.num_envs
-
-        self.counter = 0
 
         # Currently only the "observations" are sent to the actor and critic.
         # The "priviliged_obs" are not handled so far in sample-factory
@@ -133,17 +133,15 @@ class BattleUavTask(BaseTask):
         self.sim_env.delete_env()
 
     def reset(self):
-        self.target_position[:, 0:3] = 0.0  # torch.rand_like(self.target_position) * 10.0
         self.infos = {}
         self.sim_env.reset()
+        self.update_obs_state()
         return self.get_return_tuple()
 
     def reset_idx(self, env_ids):
-        self.target_position[:, 0:3] = (
-            0.0  # (torch.rand_like(self.target_position[env_ids]) * 10.0)
-        )
         self.infos = {}
         self.sim_env.reset_idx(env_ids)
+        self.update_obs_state()
         return
 
     def render(self):
@@ -152,7 +150,7 @@ class BattleUavTask(BaseTask):
     def step(self, actions):
         self.counter += 1
         self.prev_actions[:] = self.actions
-        self.actions = actions
+        self.actions[:] = actions
 
         # this uses the action, gets observations
         # calculates rewards, returns tuples
@@ -160,7 +158,7 @@ class BattleUavTask(BaseTask):
         # first reset, and the first obseration of the new episode
         # needs to be returned.
         self.sim_env.step(actions=self.actions)
-
+        self.update_obs_state()
         # This step must be done since the reset is done after the reward is calculated.
         # This enables the robot to send back an updated state, and an updated observation to the RL agent after the reset.
         # This is important for the RL agent to get the correct state after the reset.
@@ -190,7 +188,6 @@ class BattleUavTask(BaseTask):
             self.truncations,
             self.infos,
         )
-
     def process_obs_for_task(self):
         self.task_obs["observations"][:, 0:3] = (
                 self.target_position - self.obs_dict["robot_position"]
@@ -198,6 +195,7 @@ class BattleUavTask(BaseTask):
         self.task_obs["observations"][:, 3:7] = self.obs_dict["robot_orientation"]
         self.task_obs["observations"][:, 7:10] = self.obs_dict["robot_body_linvel"]
         self.task_obs["observations"][:, 10:13] = self.obs_dict["robot_body_angvel"]
+        self.task_obs["observations"][:, 13:16] = self.target_velocity
         self.task_obs["rewards"] = self.rewards
         self.task_obs["terminations"] = self.terminations
         self.task_obs["truncations"] = self.truncations
@@ -228,6 +226,15 @@ class BattleUavTask(BaseTask):
             self.task_config.reward_parameters,
         )
 
+    def compute_obs_next_action(self):
+        self.obs_twist = torch.zeros((self.sim_env.num_envs, self.sim_env.IGE_env.num_assets_per_env - 1, 6),
+                                     device="cuda:0")
+
+    def update_obs_state(self):
+        target_position_all = self.sim_env.get_obs_position()
+        target_velocity_all = self.sim_env.get_obs_linvel()
+        self.target_position[:] = target_position_all[:, self.uav_index[0], :]
+        self.target_velocity[:] = target_velocity_all[:, self.uav_index[0], :]
 
 @torch.jit.script
 def exp_func(x, gain, exp):
@@ -235,11 +242,11 @@ def exp_func(x, gain, exp):
     return gain * torch.exp(-exp * x * x)
 
 
+
 @torch.jit.script
 def exp_penalty_func(x, gain, exp):
     # type: (Tensor, float, float) -> Tensor
     return gain * (torch.exp(-exp * x * x) - 1)
-
 
 @torch.jit.script
 def compute_reward(

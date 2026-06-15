@@ -12,7 +12,7 @@ class task_config:
     use_warp = False
     headless = False
     device = "cuda:0"
-    observation_space_dim = 13
+    observation_space_dim = 16
     privileged_observation_space_dim = 0
     action_space_dim = 4
     episode_len_steps = 500  # real physics time for simulation is this value multiplied by sim.dt
