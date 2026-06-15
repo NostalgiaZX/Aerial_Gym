@@ -88,6 +88,14 @@ env_configurations.register(
 )
 
 env_configurations.register(
+    "battle_uav_task",
+    {
+        "env_creator": lambda **kwargs: task_registry.make_task("battle_uav_task", **kwargs),
+        "vecenv_type": "AERIAL-RLGPU",
+    },
+)
+
+env_configurations.register(
     "position_setpoint_task_sim2real",
     {
         "env_creator": lambda **kwargs: task_registry.make_task(

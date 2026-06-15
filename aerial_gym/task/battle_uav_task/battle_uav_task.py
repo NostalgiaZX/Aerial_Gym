@@ -171,6 +171,7 @@ class BattleUavTask(BaseTask):
             self.sim_env.sim_steps > self.task_config.episode_len_steps, 1, 0
         )
         self.sim_env.post_reward_calculation_step()
+        self.update_obs_state()
 
         self.infos = {}  # self.obs_dict["infos"]
 
@@ -280,7 +281,7 @@ def compute_reward(
     )
     total_reward[:] = curriculum_level_multiplier * total_reward
 
-    crashes[:] = torch.where(dist > 8.0, torch.ones_like(crashes), crashes)
+    crashes[:] = torch.where(dist > 15.0, torch.ones_like(crashes), crashes)
 
     total_reward[:] = torch.where(crashes > 0.0, -20 * torch.ones_like(total_reward), total_reward)
 
