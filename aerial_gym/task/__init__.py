@@ -1,3 +1,8 @@
+#注册task
+from aerial_gym.task.battle_uav_task.battle_uav_task import (
+    BattleUavTask,
+)
+
 from aerial_gym.task.position_setpoint_task.position_setpoint_task import (
     PositionSetpointTask,
 )
@@ -19,6 +24,11 @@ from aerial_gym.task.position_setpoint_task_acceleration_sim2real.position_setpo
 )
 
 from aerial_gym.task.navigation_task.navigation_task import NavigationTask
+#注册config
+
+from aerial_gym.config.task_config.battle_uav_task_config import (
+    task_config as battle_uav_task_config,
+)
 
 from aerial_gym.config.task_config.position_setpoint_task_config import (
     task_config as position_setpoint_task_config,
@@ -46,9 +56,12 @@ from aerial_gym.config.task_config.navigation_task_config import (
 
 from aerial_gym.registry.task_registry import task_registry
 
-
+#生成注册表
 task_registry.register_task(
     "position_setpoint_task", PositionSetpointTask, position_setpoint_task_config
+)
+task_registry.register_task(
+    "battle_uav_task", BattleUavTask, battle_uav_task_config
 )
 task_registry.register_task(
     "position_setpoint_task_sim2real",

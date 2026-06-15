@@ -547,9 +547,9 @@ class dynamic_uav_asset_params(asset_state_params):
     collision_mask = 1  # objects with the same collision mask will not collide
 
     min_state_ratio = [
-        0.30,
-        0.05,
-        0.05,
+        0.0,
+        0.0,
+        0.0,
         -np.pi,
         -np.pi,
         -np.pi,
@@ -562,9 +562,9 @@ class dynamic_uav_asset_params(asset_state_params):
         0.0,
     ]
     max_state_ratio = [
-        0.85,
-        0.9,
-        0.9,
+        0.3,
+        0.3,
+        0.3,
         np.pi,
         np.pi,
         np.pi,
