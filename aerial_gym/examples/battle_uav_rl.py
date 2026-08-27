@@ -10,7 +10,7 @@ if __name__ == "__main__":
     logger.warning("\n\n\nJust an example task interface.\n\n\n")
     start = time.time()
     rl_task_env = task_registry.make_task(
-        "battle_uav_task",
+        "battle_uav_task",num_envs=2048,headless=None,use_warp=None
         # other params are not set here and default values from the task config file are used
     )
     rl_task_env.reset()

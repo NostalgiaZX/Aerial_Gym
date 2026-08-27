@@ -6,7 +6,7 @@ class task_config:
     sim_name = "base_sim"
     env_name = "dynamic_uav_env"
     robot_name = "base_quadrotor"
-    controller_name = "lee_position_control"
+    controller_name = "lee_velocity_control"
     args = {}
     num_envs = 4096
     use_warp = False

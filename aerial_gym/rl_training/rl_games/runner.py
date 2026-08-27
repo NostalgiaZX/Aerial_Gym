@@ -207,7 +207,7 @@ def get_args():
         {
             "name": "--file",
             "type": str,
-            "default": "ppo_aerial_quad.yaml",
+            "default": "ppo_battle_uav.yaml",
             "required": False,
             "help": "path to config",
         },
