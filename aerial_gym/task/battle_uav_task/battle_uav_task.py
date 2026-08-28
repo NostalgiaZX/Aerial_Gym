@@ -265,9 +265,9 @@ def compute_reward(
 
     dist = torch.norm(pos_error, dim=1)
 
-    pos_reward = exp_func(dist, 3.0, 8.0) + exp_func(dist, 2.0, 4.0)
+    pos_reward = exp_func(dist, 3.0, 8.0) + exp_func(dist, 2.0, 4.0) + exp_func(dist, 5.0, 100.0)
 
-    dist_reward = (20 - dist) / 40.0
+    dist_reward = (20 - dist) / 8.0
 
     ups = quat_axis(robot_quats, 2)
     tiltage = torch.abs(1 - ups[..., 2])
@@ -277,7 +277,7 @@ def compute_reward(
     ang_vel_reward = (1.0 / (1.0 + spinnage * spinnage)) * 3
 
     total_reward = (
-            pos_reward + dist_reward + 0.1 * (up_reward + ang_vel_reward)
+            pos_reward + dist_reward + 0.1 * (up_reward + ang_vel_reward) - 3.0
     )
     total_reward[:] = curriculum_level_multiplier * total_reward
 
@@ -286,7 +286,7 @@ def compute_reward(
     hit_other = physical_collision & (dist >= 0.8)
     too_far = dist > 15.0
 
-    total_reward[:] = torch.where(hit_target, torch.full_like(total_reward, 50.0), total_reward)
+    total_reward[:] = torch.where(hit_target, torch.full_like(total_reward, 500.0), total_reward)
     total_reward[:] = torch.where(hit_other, torch.full_like(total_reward, -20.0), total_reward)
     total_reward[:] = torch.where(too_far, torch.full_like(total_reward, -20.0), total_reward)
 
