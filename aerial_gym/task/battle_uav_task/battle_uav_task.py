@@ -277,12 +277,23 @@ def compute_reward(
     ang_vel_reward = (1.0 / (1.0 + spinnage * spinnage)) * 3
 
     total_reward = (
-            pos_reward + dist_reward + pos_reward * (up_reward + ang_vel_reward)
+            pos_reward + dist_reward + 0.1 * (up_reward + ang_vel_reward)
     )
     total_reward[:] = curriculum_level_multiplier * total_reward
 
-    crashes[:] = torch.where(dist > 15.0, torch.ones_like(crashes), crashes)
+    physical_collision = crashes > 0
+    hit_target = physical_collision & (dist < 0.8)
+    hit_other = physical_collision & (dist >= 0.8)
+    too_far = dist > 15.0
 
-    total_reward[:] = torch.where(crashes > 0.0, -20 * torch.ones_like(total_reward), total_reward)
+    total_reward[:] = torch.where(hit_target, torch.full_like(total_reward, 50.0), total_reward)
+    total_reward[:] = torch.where(hit_other, torch.full_like(total_reward, -20.0), total_reward)
+    total_reward[:] = torch.where(too_far, torch.full_like(total_reward, -20.0), total_reward)
+
+    crashes[:] = torch.where(
+        hit_target | hit_other | too_far,
+        torch.ones_like(crashes),
+        crashes,
+    )
 
     return total_reward, crashes
