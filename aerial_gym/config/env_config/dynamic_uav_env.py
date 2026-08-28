@@ -16,7 +16,7 @@ class QuadFlightDynamicEnvCfg:
 
         render_viewer_every_n_steps = 1  # render the viewer every n steps
         reset_on_collision = (
-            False  # reset environment when contact force on quadrotor is above a threshold
+            True  # reset environment when contact force on quadrotor is above a threshold
         )
         collision_force_threshold = 0.05  # collision force threshold [N]
         create_ground_plane = True  # create a ground plane

@@ -549,7 +549,7 @@ class dynamic_uav_asset_params(asset_state_params):
     min_state_ratio = [
         0.0,
         0.0,
-        0.0,
+        0.15,
         -np.pi,
         -np.pi,
         -np.pi,
@@ -564,7 +564,7 @@ class dynamic_uav_asset_params(asset_state_params):
     max_state_ratio = [
         0.3,
         0.3,
-        0.3,
+        0.5,
         np.pi,
         np.pi,
         np.pi,
