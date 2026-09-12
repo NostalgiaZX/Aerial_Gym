@@ -4,6 +4,7 @@ import torch
 import numpy as np
 
 from aerial_gym.utils.math import *
+from aerial_gym.utils.dynamic_obs_controller import DynamicObsController
 
 from aerial_gym.utils.logging import CustomLogger
 
@@ -129,6 +130,45 @@ class BattleUavTask(BaseTask):
             ),
         }
 
+        self.obs_bounds_min = torch.tensor(
+            getattr(self.task_config, "obs_bounds_min", [-1.0, -2.5, 0.5]),
+            device=self.device,
+            dtype=torch.float32,
+        )
+        self.obs_bounds_max = torch.tensor(
+            getattr(self.task_config, "obs_bounds_max", [9.0, 2.5, 4.0]),
+            device=self.device,
+            dtype=torch.float32,
+        )
+        self.obs_twist = torch.zeros(
+            (
+                self.sim_env.num_envs,
+                self.sim_env.IGE_env.num_assets_per_env - 1,
+                6,
+            ),
+            device=self.device,
+        )
+        self.dynamic_obs_controller = DynamicObsController(
+            min_position=self.obs_bounds_min,
+            max_position=self.obs_bounds_max,
+            num_envs=self.sim_env.num_envs,
+            device=self.device,
+            dt=float(self.obs_dict["dt"]),
+            min_velocity=float(getattr(self.task_config, "obs_min_velocity", 1.5)),
+            max_velocity=float(getattr(self.task_config, "obs_max_velocity", 3.5)),
+            min_segment_steps=int(
+                getattr(self.task_config, "obs_min_segment_steps", 10)
+            ),
+            max_segment_steps=int(
+                getattr(self.task_config, "obs_max_segment_steps", 40)
+            ),
+            smoothing_factor=float(
+                getattr(self.task_config, "obs_smoothing_factor", 0.2)
+            ),
+            noise_scale=float(getattr(self.task_config, "obs_noise_scale", 0.2)),
+            position_gain=float(getattr(self.task_config, "obs_position_gain", 4.0)),
+        )
+
     def close(self):
         self.sim_env.delete_env()
 
@@ -136,12 +176,14 @@ class BattleUavTask(BaseTask):
         self.infos = {}
         self.sim_env.reset()
         self.update_obs_state()
+        self._reset_dynamic_obs_controller()
         return self.get_return_tuple()
 
     def reset_idx(self, env_ids):
         self.infos = {}
         self.sim_env.reset_idx(env_ids)
         self.update_obs_state()
+        self._reset_dynamic_obs_controller(env_ids)
         return
 
     def render(self):
@@ -157,7 +199,8 @@ class BattleUavTask(BaseTask):
         # In this case, the episodes that are terminated need to be
         # first reset, and the first obseration of the new episode
         # needs to be returned.
-        self.sim_env.step(actions=self.actions)
+        self.compute_obs_next_action()
+        self.sim_env.step(actions=self.actions, env_actions=self.obs_twist)
         self.update_obs_state()
         # This step must be done since the reset is done after the reward is calculated.
         # This enables the robot to send back an updated state, and an updated observation to the RL agent after the reset.
@@ -228,8 +271,16 @@ class BattleUavTask(BaseTask):
         )
 
     def compute_obs_next_action(self):
-        self.obs_twist = torch.zeros((self.sim_env.num_envs, self.sim_env.IGE_env.num_assets_per_env - 1, 6),
-                                     device="cuda:0")
+        self.obs_twist.zero_()
+        controller_twist = self.dynamic_obs_controller.get_twist(self.target_position)
+        # dynamic_uav 在障碍列表里的槽位对所有 env 相同，直接向量化赋值。
+        self.obs_twist[:, self.uav_index[0]] = controller_twist
+
+    def _reset_dynamic_obs_controller(self, env_ids=None):
+        # 边界是固定盒子，不需要在 reset 时刷新；只重播样条控制点。
+        self.dynamic_obs_controller.reset(
+            initial_positions=self.target_position, env_ids=env_ids
+        )
 
     def update_obs_state(self):
         target_position_all = self.sim_env.get_obs_position()
