@@ -5,10 +5,10 @@ class task_config:
     seed = 1
     sim_name = "base_sim"
     env_name = "hard_dynamic_uav_env"
-    robot_name = "base_quadrotor"
-    controller_name = "lee_velocity_control"
+    robot_name = "lmf2"
+    controller_name = "lmf2_velocity_control"
     args = {}
-    num_envs = 4096
+    num_envs = 1024
     use_warp = False
     headless = False
     device = "cuda:0"
