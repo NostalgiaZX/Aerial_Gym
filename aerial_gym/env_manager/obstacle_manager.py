@@ -59,13 +59,13 @@ class ObstacleManager(BaseManager):
         if self.num_assets <= 1:
             return
         N, M, _ = self.obstacle_orientation.shape
-        ori_2d = self.obstacle_orientation.view(N * M, 4)
-        linvel_2d = self.obstacle_linvel.view(N * M, 3)
-        angvel_2d = self.obstacle_angvel.view(N * M, 3)
+        ori_2d = self.obstacle_orientation.reshape(N * M, 4)
+        linvel_2d = self.obstacle_linvel.reshape(N * M, 3)
+        angvel_2d = self.obstacle_angvel.reshape(N * M, 3)
 
-        self.obstacle_euler_angles[:] = ssa(get_euler_xyz_tensor(ori_2d)).view(N, M, 3)
+        self.obstacle_euler_angles[:] = ssa(get_euler_xyz_tensor(ori_2d)).reshape(N, M, 3)
         vehicle_ori_2d = vehicle_frame_quat_from_quat(ori_2d)
-        self.obstacle_vehicle_orientation[:] = vehicle_ori_2d.view(N, M, 4)
-        self.obstacle_vehicle_linvel[:] = quat_rotate_inverse(vehicle_ori_2d, linvel_2d).view(N, M, 3)
-        self.obstacle_body_linvel[:] = quat_rotate_inverse(ori_2d, linvel_2d).view(N, M, 3)
-        self.obstacle_body_angvel[:] = quat_rotate_inverse(ori_2d, angvel_2d).view(N, M, 3)
+        self.obstacle_vehicle_orientation[:] = vehicle_ori_2d.reshape(N, M, 4)
+        self.obstacle_vehicle_linvel[:] = quat_rotate_inverse(vehicle_ori_2d, linvel_2d).reshape(N, M, 3)
+        self.obstacle_body_linvel[:] = quat_rotate_inverse(ori_2d, linvel_2d).reshape(N, M, 3)
+        self.obstacle_body_angvel[:] = quat_rotate_inverse(ori_2d, angvel_2d).reshape(N, M, 3)
