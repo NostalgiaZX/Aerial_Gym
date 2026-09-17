@@ -1,4 +1,5 @@
 import torch
+from aerial_gym import AERIAL_GYM_DIRECTORY
 
 
 class task_config:
@@ -9,14 +10,26 @@ class task_config:
     controller_name = "lmf2_velocity_control"
     args = {}
     num_envs = 1024
-    use_warp = False
+    use_warp = True
     headless = False
     device = "cuda:0"
-    observation_space_dim = 16
+    observation_space_dim = 80  # 16 privileged + 64 VAE latent
     privileged_observation_space_dim = 0
     action_space_dim = 4
     episode_len_steps = 500  # real physics time for simulation is this value multiplied by sim.dt
     return_state_before_reset = False
+
+    class vae_config:
+        use_vae = True
+        latent_dims = 64
+        model_file = (
+            AERIAL_GYM_DIRECTORY
+            + "/aerial_gym/utils/vae/weights/ICRA_test_set_more_sim_data_kld_beta_3_LD_64_epoch_49.pth"
+        )
+        model_folder = AERIAL_GYM_DIRECTORY
+        image_res = (270, 480)
+        interpolation_mode = "nearest"
+        return_sampled_latent = True
 
     # 动态障碍物（hard_dynamic_uav）活动的固定盒子，选在所有 env 随机边界的公共内框里。
     obs_bounds_min = [-1.0, -2.5, 0.5]

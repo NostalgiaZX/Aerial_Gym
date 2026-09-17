@@ -7,6 +7,7 @@ from aerial_gym.utils.math import *
 from aerial_gym.utils.dynamic_obs_controller import DynamicObsController
 
 from aerial_gym.utils.logging import CustomLogger
+from aerial_gym.utils.vae.vae_image_encoder import VAEImageEncoder
 
 import gymnasium as gym
 from gym.spaces import Dict, Box
@@ -84,6 +85,18 @@ class HardBattleUavTask(BaseTask):
         self.target_velocity = torch.zeros(
             (self.sim_env.num_envs, 3), device=self.device, requires_grad=False
         )
+
+        if self.task_config.vae_config.use_vae:
+            self.vae_model = VAEImageEncoder(config=self.task_config.vae_config, device=self.device)
+            self.image_latents = torch.zeros(
+                (self.sim_env.num_envs, self.task_config.vae_config.latent_dims),
+                device=self.device,
+                requires_grad=False,
+            )
+        else:
+            self.vae_model = None
+            self.image_latents = None
+
         # Get the dictionary once from the environment and use it to get the observations later.
         # This is to avoid constant retuning of data back anf forth across functions as the tensors update and can be read in-place.
         self.obs_dict = self.sim_env.get_obs()
@@ -215,6 +228,7 @@ class HardBattleUavTask(BaseTask):
         )
         self.sim_env.post_reward_calculation_step()
         self.update_obs_state()
+        self.process_image_observation()
 
         self.infos = {}  # self.obs_dict["infos"]
 
@@ -222,6 +236,12 @@ class HardBattleUavTask(BaseTask):
             return_tuple = self.get_return_tuple()
 
         return return_tuple
+
+    def process_image_observation(self):
+        if not self.task_config.vae_config.use_vae:
+            return
+        image_obs = self.obs_dict["depth_range_pixels"].squeeze(1)
+        self.image_latents[:] = self.vae_model.encode(image_obs)
 
     def get_return_tuple(self):
         self.process_obs_for_task()
@@ -240,6 +260,8 @@ class HardBattleUavTask(BaseTask):
         self.task_obs["observations"][:, 7:10] = self.obs_dict["robot_body_linvel"]
         self.task_obs["observations"][:, 10:13] = self.obs_dict["robot_body_angvel"]
         self.task_obs["observations"][:, 13:16] = self.target_velocity
+        if self.task_config.vae_config.use_vae:
+            self.task_obs["observations"][:, 16:] = self.image_latents
         self.task_obs["rewards"] = self.rewards
         self.task_obs["terminations"] = self.terminations
         self.task_obs["truncations"] = self.truncations
