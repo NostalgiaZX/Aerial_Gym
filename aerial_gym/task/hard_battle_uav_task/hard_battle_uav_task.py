@@ -253,15 +253,26 @@ class HardBattleUavTask(BaseTask):
             self.infos,
         )
     def process_obs_for_task(self):
-        self.task_obs["observations"][:, 0:3] = (
-                self.target_position - self.obs_dict["robot_position"]
+        vec_to_tgt = quat_rotate_inverse(
+            self.obs_dict["robot_vehicle_orientation"],
+            (self.target_position - self.obs_dict["robot_position"]),
         )
-        self.task_obs["observations"][:, 3:7] = self.obs_dict["robot_orientation"]
+        perturbed_vec_to_tgt = vec_to_tgt + 0.2 * (torch.rand_like(vec_to_tgt) - 0.5)
+        dist_to_tgt = torch.norm(vec_to_tgt, dim=-1)
+        perturbed_unit_vec_to_tgt = perturbed_vec_to_tgt / dist_to_tgt.unsqueeze(1).clamp(min=1e-6)
+        self.task_obs["observations"][:, 0:3] = perturbed_unit_vec_to_tgt
+        self.task_obs["observations"][:, 3] = dist_to_tgt
+        euler_angles = ssa(self.obs_dict["robot_euler_angles"])
+        perturbed_euler_angles = euler_angles + 0.1 * (torch.rand_like(euler_angles) - 0.5)
+        self.task_obs["observations"][:, 4] = perturbed_euler_angles[:, 0]
+        self.task_obs["observations"][:, 5] = perturbed_euler_angles[:, 1]
+        self.task_obs["observations"][:, 6] = 0.0
         self.task_obs["observations"][:, 7:10] = self.obs_dict["robot_body_linvel"]
         self.task_obs["observations"][:, 10:13] = self.obs_dict["robot_body_angvel"]
         self.task_obs["observations"][:, 13:16] = self.target_velocity
+        self.task_obs["observations"][:, 16:20] = self.actions
         if self.task_config.vae_config.use_vae:
-            self.task_obs["observations"][:, 16:] = self.image_latents
+            self.task_obs["observations"][:, 20:] = self.image_latents
         self.task_obs["rewards"] = self.rewards
         self.task_obs["terminations"] = self.terminations
         self.task_obs["truncations"] = self.truncations
@@ -349,8 +360,45 @@ def compute_reward(
     spinnage = torch.norm(robot_angvels, dim=1)
     ang_vel_reward = (1.0 / (1.0 + spinnage * spinnage)) * 3
 
+    action_diff = current_action - prev_actions
+    x_diff_penalty = exp_penalty_func(
+        action_diff[:, 0],
+        float(parameter_dict["x_action_diff_penalty_magnitude"]),
+        float(parameter_dict["x_action_diff_penalty_exponent"]),
+    )
+    z_diff_penalty = exp_penalty_func(
+        action_diff[:, 2],
+        float(parameter_dict["z_action_diff_penalty_magnitude"]),
+        float(parameter_dict["z_action_diff_penalty_exponent"]),
+    )
+    yawrate_diff_penalty = exp_penalty_func(
+        action_diff[:, 3],
+        float(parameter_dict["yawrate_action_diff_penalty_magnitude"]),
+        float(parameter_dict["yawrate_action_diff_penalty_exponent"]),
+    )
+    x_abs_penalty = exp_penalty_func(
+        current_action[:, 0],
+        float(parameter_dict["x_absolute_action_penalty_magnitude"]),
+        float(parameter_dict["x_absolute_action_penalty_exponent"]),
+    )
+    z_abs_penalty = exp_penalty_func(
+        current_action[:, 2],
+        float(parameter_dict["z_absolute_action_penalty_magnitude"]),
+        float(parameter_dict["z_absolute_action_penalty_exponent"]),
+    )
+    yawrate_abs_penalty = exp_penalty_func(
+        current_action[:, 3],
+        float(parameter_dict["yawrate_absolute_action_penalty_magnitude"]),
+        float(parameter_dict["yawrate_absolute_action_penalty_exponent"]),
+    )
+    total_action_penalty = (
+        x_diff_penalty + z_diff_penalty + yawrate_diff_penalty
+        + x_abs_penalty + z_abs_penalty + yawrate_abs_penalty
+    )
+
     total_reward = (
             pos_reward + dist_reward + 0.1 * (up_reward + ang_vel_reward) - 3.0
+            + total_action_penalty
     )
     total_reward[:] = curriculum_level_multiplier * total_reward
 

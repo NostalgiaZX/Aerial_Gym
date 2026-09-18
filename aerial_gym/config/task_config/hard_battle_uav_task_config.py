@@ -13,7 +13,7 @@ class task_config:
     use_warp = True
     headless = False
     device = "cuda:0"
-    observation_space_dim = 80  # 16 privileged + 64 VAE latent
+    observation_space_dim = 84
     privileged_observation_space_dim = 0
     action_space_dim = 4
     episode_len_steps = 500  # real physics time for simulation is this value multiplied by sim.dt
@@ -54,4 +54,16 @@ class task_config:
         "action_diff_penalty_gain": [1.0, 1.0, 1.0],
         "absolute_action_reward_gain": [2.0, 2.0, 2.0],
         "crash_penalty": -100,
+        "x_action_diff_penalty_magnitude": 0.25,
+        "x_action_diff_penalty_exponent": 3.333,
+        "z_action_diff_penalty_magnitude": 0.25,
+        "z_action_diff_penalty_exponent": 5.0,
+        "yawrate_action_diff_penalty_magnitude": 0.25,
+        "yawrate_action_diff_penalty_exponent": 3.33,
+        "x_absolute_action_penalty_magnitude": 0.05,
+        "x_absolute_action_penalty_exponent": 0.3,
+        "z_absolute_action_penalty_magnitude": 0.4,
+        "z_absolute_action_penalty_exponent": 1.0,
+        "yawrate_absolute_action_penalty_magnitude": 0.4,
+        "yawrate_absolute_action_penalty_exponent": 2.0,
     }
